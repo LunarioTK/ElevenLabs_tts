@@ -22,30 +22,63 @@ class _HomeState extends State<Home> {
 
   AudioPlayer audioPlayer = AudioPlayer();
   List<String> userQuestList = [];
+  Utf8Codec utf8 = const Utf8Codec();
+  var decodeText;
   File? fileAnt;
 
-  void getResponse(String userQuest) async {
+  String formatText(String texto) {
+    var encodeText = utf8.encode(texto);
+    return decodeText = utf8.decode(encodeText);
+  }
+
+  void playBook(String userQuest) async {
     APIKey apiKey = APIKey();
+    String histId = '';
     String apiUrl =
         "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
+    String apiUrlHist = "https://api.elevenlabs.io/v1/history";
 
-    if (userQuestList.isEmpty) {
+    Map<String, String> headers = {
+      'accept': 'audio/mpeg',
+      'xi-api-key': apiKey.getApiKey,
+      'Content-Type': 'application/json',
+    };
+
+    Map<String, dynamic> jsonData = {
+      'text': userQuest,
+    };
+
+    //print(data['history'][0]['history_item_id']);
+
+    // Get History
+    var responseHist = await http.get(Uri.parse(apiUrlHist), headers: headers);
+    Map<String, dynamic> data =
+        json.decode(utf8.decode(responseHist.bodyBytes));
+
+    List<dynamic> dataAll = data['history'];
+
+    for (var element in dataAll) {
+      Map<String, dynamic> every = element;
+      every.forEach((key, value) {
+        if (key == 'text' &&
+            value.toString().toUpperCase() == userQuest.toUpperCase()) {
+          histId = every['history_item_id'];
+        }
+      });
+    }
+    String getAudioHist = 'https://api.elevenlabs.io/v1/history/$histId/audio';
+
+    final dir = await getTemporaryDirectory();
+    final file = File('${dir.path}/audio.mp3');
+
+    if (histId.isEmpty) {
       userQuestList.add(userQuest);
-      Map<String, String> headers = {
-        'accept': 'audio/mpeg',
-        'xi-api-key': apiKey.getApiKey,
-        'Content-Type': 'application/json',
-      };
-
-      Map<String, dynamic> jsonData = {
-        'text': userQuest,
-      };
 
       var response = await http.post(Uri.parse(apiUrl),
           headers: headers, body: json.encode(jsonData));
+
       final bytes = response.bodyBytes;
-      final dir = await getTemporaryDirectory();
-      final file = File('${dir.path}/audio.mp3');
+
       await file.writeAsBytes(bytes);
       fileAnt = file;
 
@@ -56,7 +89,21 @@ class _HomeState extends State<Home> {
         print("Erro: ${response.statusCode}");
       }
     } else {
-      if (userQuest.contains(userQuest)) {
+      var getAudioFromHist =
+          await http.get(Uri.parse(getAudioHist), headers: headers);
+
+      final bytes = getAudioFromHist.bodyBytes;
+
+      await file.writeAsBytes(bytes);
+
+      if (getAudioFromHist.statusCode == 200) {
+        audioPlayer.play(DeviceFileSource(file.path));
+        isPlaying = true;
+      } else {
+        print("Erro: ${getAudioFromHist.statusCode}");
+      }
+
+      /*if (userQuest.contains(userQuest)) {
         // Checking if the audio has finished
         audioPlayer.onPlayerComplete.listen((event) {
           hasFinished = true;
@@ -69,7 +116,7 @@ class _HomeState extends State<Home> {
           audioPlayer.play(DeviceFileSource(fileAnt!.path));
           isPlaying = true;
         }
-      }
+      }*/
     }
   }
 
@@ -80,8 +127,8 @@ class _HomeState extends State<Home> {
         child: ElevatedButton(
           onPressed: () {
             if (isPlaying == false) {
-              getResponse(
-                  'The Surprising Power of Atomic Habits. THE FATE OF British Cycling changed one day in 2003. The organization, which was the governing body for professional cycling in Great Britain, had recently hired Dave Brailsford as its new performance director.');
+              playBook(
+                  "The Surprising Power of Atomic Habits. THE FATE OF British Cycling changed one day in 2003. The organization, which was the governing body for professional cycling in Great Britain, had recently hired Dave Brailsford as its new performance director.");
             } else {
               audioPlayer.pause();
               isPlaying = false;
