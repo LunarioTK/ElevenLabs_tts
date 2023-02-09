@@ -1,13 +1,21 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
-
+import 'package:elevenlabs_tts_app/services/elevenlabs.dart';
+import 'package:provider/provider.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:flutter/material.dart';
 
 class PlayerWidget extends StatefulWidget {
   final AudioPlayer player;
+  final ScrollController controller;
+  final PanelController panelController;
 
-  const PlayerWidget({super.key, required this.player});
+  const PlayerWidget(
+      {super.key,
+      required this.player,
+      required this.controller,
+      required this.panelController});
 
   @override
   State<StatefulWidget> createState() {
@@ -16,6 +24,8 @@ class PlayerWidget extends StatefulWidget {
 }
 
 class _PlayerWidgetState extends State<PlayerWidget> {
+  final panelController = PanelController();
+
   PlayerState? _playerState;
   Duration? _duration;
   Duration? _position;
@@ -73,10 +83,47 @@ class _PlayerWidgetState extends State<PlayerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
+    return ListView(
+      controller: widget.controller,
+      padding: EdgeInsets.zero,
+      shrinkWrap: true,
+      children: <Widget>[
+        const SizedBox(height: 12),
+        buildHandle(),
+        const SizedBox(height: 200),
+        buildPlayer(),
+      ],
+    );
+  }
+
+  // Trace
+  Widget buildHandle() => GestureDetector(
+        onTap: (() => togglePanel(context)),
+        child: Center(
+          child: Container(
+              width: 40,
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: const BorderRadius.all(Radius.circular(12)),
+              )),
+        ),
+      );
+
+  void togglePanel(BuildContext context) {
+    var isPanelOpen = Provider.of<APIKey>(context, listen: false);
+
+    if (widget.panelController.isPanelOpen) {
+      widget.panelController.close();
+      isPanelOpen.setPanelOpen = false;
+    }
+  }
+
+  Widget buildPlayer() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        //mainAxisSize: MainAxisSize.min,
         children: <Widget>[
           Row(
             mainAxisSize: MainAxisSize.min,

@@ -8,6 +8,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:sliding_up_panel/sliding_up_panel.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,9 +19,12 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final panelController = PanelController();
+
   String? chatResponse;
   bool isPlaying = false;
   bool hasFinished = false;
+  bool isOpen = false;
 
   AudioPlayer audioPlayer = AudioPlayer();
   List<String> userQuestList = [];
@@ -109,31 +114,73 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    final panelHeightClosed = MediaQuery.of(context).size.height * 0.4;
+    final panelHeightOpen = MediaQuery.of(context).size.height * 0.90;
+
+    var isPanelOpen = context.watch<APIKey>();
+
     return Scaffold(
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
+      resizeToAvoidBottomInset: false,
+      body: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: SlidingUpPanel(
+          minHeight: 80,
+          onPanelClosed: () => isPanelOpen.setPanelOpen = false,
+          onPanelOpened: () {
             playBook(
-                "The length of ‘average’ books seem to be changing with the evolution of writing and (self) publishing. Books are now getting shorter and shorter. For myself, I plan, for a medium length book to write about 20,000 words.");
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) => PlayerWidget(player: audioPlayer),
-              ),
+              "The length of ‘average’ books seem to be changing with the evolution of writing and (self) publishing. Books are now getting shorter and shorter. For myself, I plan, for a medium length book to write about 20,000 words.",
             );
-            /*if (isPlaying == false) {
-              playBook("The Surprising Power of Atomic Habits.");
-            } else {
-              audioPlayer.onPlayerComplete.listen((event) {
-                hasFinished = true;
-                isPlaying = false;
-              });
-              audioPlayer.pause();
-              isPlaying = false;
-            }*/
           },
-          child: const Text('Api'),
+          maxHeight: panelHeightOpen,
+          controller: panelController,
+          key: const Key('Sliding_panel'),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          collapsed: Visibility(
+            visible: isPanelOpen.isOpen ? false : true,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+              ),
+              onPressed: () {
+                panelController.open();
+                isPanelOpen.setPanelOpen = true;
+                playBook(
+                  "The length of ‘average’ books seem to be changing with the evolution of writing and (self) publishing. Books are now getting shorter and shorter. For myself, I plan, for a medium length book to write about 20,000 words.",
+                );
+              },
+              child: const Text(
+                'Api',
+                style: TextStyle(
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ),
+          panelBuilder: (controller) => PlayerWidget(
+            player: audioPlayer,
+            panelController: panelController,
+            controller: controller,
+          ),
+          body: const Center(),
         ),
       ),
     );
   }
 }
+
+//PlayerWidget(player: audioPlayer);
+              /*Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => PlayerWidget(player: audioPlayer),
+                  ),
+                );*/
+              /*if (isPlaying == false) {
+                  playBook("The Surprising Power of Atomic Habits.");
+                } else {
+                  audioPlayer.onPlayerComplete.listen((event) {
+                    hasFinished = true;
+                    isPlaying = false;
+                  });
+                  audioPlayer.pause();
+                  isPlaying = false;
+                }*/
