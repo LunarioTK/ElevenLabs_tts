@@ -144,7 +144,7 @@ class _PlayerWidgetState extends State<PlayerWidget> {
               ),
               IconButton(
                 key: const Key('stop_button'),
-                onPressed: _isPlaying || _isPaused ? _stop : null,
+                onPressed: /*_isPlaying || _isPaused ?*/ _stop,
                 iconSize: 48.0,
                 icon: const Icon(Icons.stop),
                 color: Colors.cyan,
