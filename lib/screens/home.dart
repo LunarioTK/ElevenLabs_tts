@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:elevenlabs_tts_app/screens/audioplayer.dart';
 import 'package:elevenlabs_tts_app/services/elevenlabs.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,7 +36,7 @@ class _HomeState extends State<Home> {
     APIKey apiKey = APIKey();
     String histId = '';
     String apiUrl =
-        "https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM";
+        "https://api.elevenlabs.io/v1/text-to-speech/oBblmJ2l8wOCsMUauDcR";
     String apiUrlHist = "https://api.elevenlabs.io/v1/history";
 
     Map<String, String> headers = {
@@ -83,12 +84,13 @@ class _HomeState extends State<Home> {
       fileAnt = file;
 
       if (response.statusCode == 200) {
-        audioPlayer.play(DeviceFileSource(file.path));
+        await audioPlayer.setSourceDeviceFile(file.path);
         isPlaying = true;
       } else {
         print("Erro: ${response.statusCode}");
       }
     } else {
+      //print('In History');
       var getAudioFromHist =
           await http.get(Uri.parse(getAudioHist), headers: headers);
 
@@ -97,26 +99,11 @@ class _HomeState extends State<Home> {
       await file.writeAsBytes(bytes);
 
       if (getAudioFromHist.statusCode == 200) {
-        audioPlayer.play(DeviceFileSource(file.path));
+        await audioPlayer.setSourceDeviceFile(file.path);
         isPlaying = true;
       } else {
         print("Erro: ${getAudioFromHist.statusCode}");
       }
-
-      /*if (userQuest.contains(userQuest)) {
-        // Checking if the audio has finished
-        audioPlayer.onPlayerComplete.listen((event) {
-          hasFinished = true;
-        });
-
-        if (hasFinished == false) {
-          audioPlayer.resume();
-          isPlaying = true;
-        } else {
-          audioPlayer.play(DeviceFileSource(fileAnt!.path));
-          isPlaying = true;
-        }
-      }*/
     }
   }
 
@@ -126,13 +113,23 @@ class _HomeState extends State<Home> {
       body: Center(
         child: ElevatedButton(
           onPressed: () {
-            if (isPlaying == false) {
-              playBook(
-                  "The Surprising Power of Atomic Habits. THE FATE OF British Cycling changed one day in 2003. The organization, which was the governing body for professional cycling in Great Britain, had recently hired Dave Brailsford as its new performance director.");
+            playBook(
+                "The length of ‘average’ books seem to be changing with the evolution of writing and (self) publishing. Books are now getting shorter and shorter. For myself, I plan, for a medium length book to write about 20,000 words.");
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => PlayerWidget(player: audioPlayer),
+              ),
+            );
+            /*if (isPlaying == false) {
+              playBook("The Surprising Power of Atomic Habits.");
             } else {
+              audioPlayer.onPlayerComplete.listen((event) {
+                hasFinished = true;
+                isPlaying = false;
+              });
               audioPlayer.pause();
               isPlaying = false;
-            }
+            }*/
           },
           child: const Text('Api'),
         ),
